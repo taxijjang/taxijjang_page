@@ -1,121 +1,133 @@
 from django.shortcuts import render, get_object_or_404
 
-from .models import Issue, Question, Customer
+from .models import Issue, Question, Customer,Solve
 from django.core.exceptions import ObjectDoesNotExist
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
+from collections import defaultdict
 import re
 # Create your views here.
-def home(request):
+def home_page(request):
     return render(request, "home.html")
-def issue(request):
+
+def issue_page(request):
     issue = Issue.objects
-    home_crwaling()
+
+    #sesson_1_url = "https://github.com/algo-gzua/AlgorithmGzua/issues/"
+    sesson_2_url = "https://github.com/leewoongi/Algorithm/issues/"
+
+    home_crwaling(sesson_2_url)
+    #home_crwaling(sesson_1_url)
     return render(request, 'issue.html', {'issue':issue})
 
 
-def home_crwaling():
-    url = "https://github.com/leewoongi/Algorithm/issues"
+def home_crwaling(sesson_url):
+    url = sesson_url
     html = urlopen(url)
     source = html.read()
     html.close()
 
     soup = BeautifulSoup(source, "html.parser")
     r = re.compile('issue_[0-9]+_link')
-    title = (soup.find_all('a', {'id' : r}))
+    print(r)
+    issue = (soup.find_all('a', {'id' : r}))
 
-    for t in title:
+    print(issue)
+    for t in issue:
         tmp = str(t.get_text())
-        obj, created = Issue.objects.get_or_create(title = tmp, defaults = {'title' : tmp})
+        obj, created = Issue.objects.get_or_create(issue = tmp, defaults = {'issue' : tmp})
 
 
-def detail(request, issue_id):
-    title = get_object_or_404(Issue,pk=issue_id)
+def detail_page(request, issue_id):
+    issue = get_object_or_404(Issue,pk=issue_id)
     
-    detail_crwaling(title)
+    #sesson_1_url = "https://github.com/algo-gzua/AlgorithmGzua/issues/"
+    sesson_2_url = "https://github.com/leewoongi/Algorithm/issues/"
+    
+    detail_crwaling(issue, sesson_2_url)
+    #detail_crwaling(issue, sesson_1_url)
+    
    
-    problems = title.question_set.all()
-    return render(request,'detail.html', {'title' : title , 'problems' : problems})
+    questions = issue.question_set.all()
+    customers = issue.customer_set.all()
+
+    return render(request,'detail.html', {'issue' : issue , 'questions' : questions,'customers':customers })
 
 
-def detail_crwaling(title):
-    tmp_title = str(title)
-    title_split = tmp_title.split(' ')
+def detail_crwaling(issue,sesson_url):
+    print(sesson_url)
+    tmp_issue = str(issue)
+    issue_split = tmp_issue.split(' ')
 
-    issue_num = title_split[2:]
+    issue_num = issue_split[2:]
     issue_num = (",".join(issue_num))[1:]
 
-    url = "https://github.com/leewoongi/Algorithm/issues/" + str(issue_num)
+    url = sesson_url + str(issue_num)
+    print(url)
     html = urlopen(url)
     source = html.read() 
     html.close()
 
     soup = BeautifulSoup(source, 'html.parser')
+
     questions = soup.find_all('td' , {'class' : "d-block comment-body markdown-body js-comment-body"})
+    print(questions)
     questions = questions[0]
     questions = questions.get_text().split("\n")
 
-    print("문제")
-    print(questions)
-    qqq = title.question_set
+    #print(questions)
+    #이슈에 대한 문제 목록
+    question_set = issue.question_set
     
     index= 1
     for q  in questions:
-        
-        obj, create = qqq.get_or_create(question = questions[index] , question_link = questions[index +1],
+        #print(index)
+        obj, create = question_set.get_or_create(question = questions[index] , question_link = questions[index +1],
                                                     defaults = {'question' : questions[index], 'question_link' : questions[index+1]})
         index+=2
         if index >= len(questions) - 1:
             break
 
+    #이제 문제를 푼 사람들 크롤링
+    #users =soup.find_all('div' ,{'class':"TimelineItem-body", 'id':"ref-commit"})
+    users = soup.select('div[class="AvatarStack-body"]')
+    users_list=[]
+    for i in users :
+        users_list.append(i['aria-label'])
+
+    solves = soup.find_all('div', {'class' : "commit-message" })
+
+    #문제 푼사람 {'이름' : set(문제 이름)} 으로 생성
+    users_dict = defaultdict(set)
+
+    for index in range(0,len(users)):
+        users_dict[users_list[index]].add(solves[index].get_text())
+
+    print(users_dict)
+    #이슈에 대한 문제 푼 사람들 customer_set 생성
+    customers = issue.customer_set
     
+    for user in users_dict:
+        #이름 없으면 생성 O 있으면 생성 X
+        obj, create = customers.get_or_create(name = user, defaults ={'name' : user})
 
-    #문제 푼 사람들
-    print("qqqqq")
-    print(qqq)
-    users = soup.find_all('a' , {'class' :"author link-gray-dark text-bold" , 'data-hovercard-type':"user"})
-    solves = soup.find_all('div', {'class' : "commit-message pr-1 flex-auto min-width-0" })
+        customer = get_object_or_404(Customer, pk = obj.id)
 
-    size = len(users)
+        #이름에 대한 문제 제목 solve_set 생성
+        solve = customer.solve_set
+        for solves in users_dict[obj.name]:
+            #print(solves)
+            solve.get_or_create(problem_solve = solves , defaults = {'problem_solve' : solves})
+        
 
-    users_set = set()
-
-    for index in range(0,size):
-        users_set.add(users[index].get_text())
-
-    print("유저 이름 모음")
-    print(users_set)
-
-    uuu = title.customer_set
-    
-    for user in users_set:
-       ojb, create = uuu.get_or_create(name = user, defaults ={'name' : user})
-    
-    uuu = uuu.values()
-    print(uuu)
-
-    for index in range(0,size) :
-        print(users[index].get_text() + " " + solves[index].get_text())
-
-    print(len(qqq.values()))
-
-    cus = Customer.objects
-
-    print(cus)
-    for q in qqq.values():
-        question = get_object_or_404(Question, pk = q['id'])
-        print(q['id'])
+def back_page(request):
+    issue = Issue.objects
+    problems = issue.question_set.all()
+    return render(request, 'back.html', {'issue': issue, 'problems':problems})
 
 
-
-def back(request):
-    title = Issue.objects
-    problems = title.question_set.all()
-    return render(request, 'back.html', {'title': title, 'problems':problems})
-
-
-def portfolio(request):
+def portfolio_page(request):
     return render(request,'portfolio.html')
     
 
