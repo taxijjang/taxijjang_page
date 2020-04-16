@@ -15,7 +15,11 @@ def issue_page(request):
     issue = Issue.objects
 
     #sesson_1_url = "https://github.com/algo-gzua/AlgorithmGzua/issues/"
+<<<<<<< HEAD
     sesson_2_url = "https://github.com/leewoongi/Algorithm/issues"
+=======
+    sesson_2_url = "https://github.com/leewoongi/Algorithm/issues/"
+>>>>>>> 73538ae910eac8abe38c182522e1799d1473f5eb
 
     home_crwaling(sesson_2_url)
     #home_crwaling(sesson_1_url)
@@ -36,9 +40,13 @@ def home_crwaling(sesson_url):
     print(issue)
     for t in issue:
         tmp = str(t.get_text())
+<<<<<<< HEAD
         print("#######################")
         print(tmp)
         obj, created = Issue.objects.get_or_create(title = tmp, defaults = {'title' : tmp})
+=======
+        obj, created = Issue.objects.get_or_create(issue = tmp, defaults = {'issue' : tmp})
+>>>>>>> 73538ae910eac8abe38c182522e1799d1473f5eb
 
 
 def detail_page(request, issue_id):

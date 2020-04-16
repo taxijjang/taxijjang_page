@@ -24,5 +24,8 @@ urlpatterns = [
     path('issue', views.issue_page, name = 'issue'),
     path('detail/<int:issue_id>', views.detail_page, name='detail'),
     path('issue',views.back_page, name = 'back'),
+<<<<<<< HEAD
     path('accounts/', include('allauth.urls')),
+=======
+>>>>>>> 73538ae910eac8abe38c182522e1799d1473f5eb
 ]

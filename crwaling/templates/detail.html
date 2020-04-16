@@ -4,15 +4,26 @@
 
 <h1>{{issue.issue}} <a href = "{% url 'back' %}">back</a></h1>
 <h1>{{questions.id}}</h1>
+<<<<<<< HEAD
 {% for problem in questions %}
     <p>{{problem.question}}</p> 
     <p><a href ={{problem.question_link}}>{{problem.question_link}}</a></p>
+=======
+{% for question in questions %}
+    <p>{{question.question}}</p> 
+    <p><a href ={{question.question_link}}>{{question.question_link}}</a></p>
+>>>>>>> 73538ae910eac8abe38c182522e1799d1473f5eb
     <br>
     <br>
-{% endfor %}
 
+{% endfor %}
 <br><br><br><br><br><br>
 
+<<<<<<< HEAD
+<br><br><br><br><br><br>
+
+=======
+>>>>>>> 73538ae910eac8abe38c182522e1799d1473f5eb
 {% for customer in customers %}
 <div class="container">
     <!-- Example row of columns -->
